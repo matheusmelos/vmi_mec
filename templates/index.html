@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process ZIP File</title>
+    <script>
+        function uploadFile() {
+            // Show the loading screen
+            document.getElementById("upload-section").style.display = "none";
+            document.getElementById("loading").style.display = "block";
+
+            // Submit the form
+            let formData = new FormData(document.getElementById("upload-form"));
+            
+            // Send form data using Fetch API
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Hide loading, show download button
+                    document.getElementById("loading").style.display = "none";
+                    document.getElementById("download-section").style.display = "block";
+                    document.getElementById("download-link").href = "/download_file/" + data.filename;
+                } else {
+                    alert('Error processing file');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing the file.');
+            });
+
+            return false;  // Prevent form submission
+        }
+    </script>
+</head>
+<body>
+
+    <!-- Section 1: Upload Form -->
+    <div id="upload-section">
+        <h1>Upload ZIP File</h1>
+        <form id="upload-form" enctype="multipart/form-data" onsubmit="return uploadFile()">
+            <input type="file" name="file" required><br><br>
+            <button type="submit">Enviar</button>
+        </form>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading" style="display:none;">
+        <h2>Processing your file... Please wait.</h2>
+        <p><img src="https://i.gifer.com/ZZ5H.gif" alt="Loading..." width="50"></p>
+    </div>
+
+    <!-- Section 2: Download Link -->
+    <div id="download-section" style="display:none;">
+        <h1>Your file has been processed!</h1>
+        <a id="download-link" href="#" download>
+            <button>Download Processed ZIP</button>
+        </a>
+    </div>
+
+</body>
+</html>
