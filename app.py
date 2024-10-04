@@ -41,12 +41,17 @@ def upload_file():
         
         return jsonify({'success': True, 'filename': os.path.basename(processed_zip_path)})
 
-# Route to download the processed file
 @app.route('/download_file/<filename>')
 def download_file(filename):
+    return render_template('downloadPage.html', filename=filename)
 
-    file_path = os.path.join(filename)
-    return send_file(file_path, as_attachment=True)
+@app.route('/send_processed_file/<filename>')
+def send_processed_file(filename):
+    file_path = os.path.join(UPLOAD_FOLDER, filename)
+    if os.path.exists(file_path):
+        return send_file(file_path, as_attachment=True)
+    else:
+        return jsonify({'success': False, 'message': 'Arquivo não encontrado'}), 404
 
 
 if __name__ == '__main__':

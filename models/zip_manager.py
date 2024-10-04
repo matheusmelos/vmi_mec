@@ -228,10 +228,11 @@ class ZipFolderManager:
         shutil.move(self.sheets, self.organization_folder_zip)
        
         if os.path.exists(relatorio):
-            shutil.move(relatorio,self.organization_folder_zip)
+            shutil.move(relatorio, self.organization_folder_zip)
             
         zip_file_processed = zip_folder(self.organization_folder_zip, all_zip)
-    
+        shutil.move(zip_file_processed, "uploads")
+
         return zip_file_processed
 
 # Apaga pastas criadas durante o processo    
