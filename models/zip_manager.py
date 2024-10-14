@@ -5,7 +5,7 @@ import openpyxl
 import rarfile
 import zipfile
 import shutil
-import time
+import stat
 import os
 
 # Processa o arquivo .zip de entrada e os 'transforma' em um Arquivo.zip e uma planilha
@@ -117,6 +117,8 @@ class ZipFolderManager:
                             dwg_processed.add(file_path)
         
 # Cria pastas de acordo o material de cada projeto e os move de uma forma que todos os arquivos do mesmo tipo fiquem agrupados de acordo o seu material
+    
+
     def organize_folders(self):
         
         def create_and_move_file(file_path, file_name, file_src):
@@ -124,7 +126,13 @@ class ZipFolderManager:
                 # Cria a pasta se não existir
                 if not os.path.exists(file_path):
                     os.makedirs(file_path)
-                
+                    
+                    # Ajusta permissões da pasta (rwx para o dono, rx para grupo e outros)
+                    os.chmod(file_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+                    
+                    # Opcionalmente, ajuste o dono/grupo (substitua 'user' e 'group' pelos corretos)
+                    # os.chown(file_path, uid, gid)
+
                 destino_path = os.path.join(file_path, file_name)
                 
                 # Remove o arquivo de destino se ele já existir
@@ -133,18 +141,30 @@ class ZipFolderManager:
                 
                 # Move o arquivo para o destino
                 shutil.move(file_src, destino_path)
-            
+
+                # Ajusta permissões do arquivo (rw para o dono, r para grupo e outros)
+                os.chmod(destino_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
+                
+                # Opcionalmente, ajuste o dono/grupo do arquivo
+                # os.chown(destino_path, uid, gid)
+
             except OSError as e:
                 print(f"Erro ao criar ou mover o arquivo {file_name}: {e}")
             except Exception as e:
                 print(f"Ocorreu um erro inesperado ao mover {file_name}: {e}")
-        
+
         try:
             # Cria as pastas caso não existam
             for directory in [self.all_pdfs, self.all_dxfs, self.all_dwgs]:
                 if not os.path.exists(directory):
                     os.makedirs(directory)
-            
+                    
+                    # Ajusta permissões da pasta (rwx para o dono, rx para grupo e outros)
+                    os.chmod(directory, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+
+                    # Opcionalmente, ajuste o dono/grupo
+                    # os.chown(directory, uid, gid)
+
             # Organiza os PDFs
             for pdf in self.pdfs:
                 pdf_path = os.path.join(self.all_pdfs, pdf.material)
@@ -158,17 +178,17 @@ class ZipFolderManager:
                 for dwg in self.dwgs:
                     if pdf.name in dwg.dwg_name:
                         dwg.material = pdf.material
-            
+
             # Organiza os DXFs
             for dxf in self.dxfs:
                 dxf_path = os.path.join(self.all_dxfs, dxf.material)
                 create_and_move_file(dxf_path, dxf.dxf_name, dxf.dxf_file)  
-            
+
             # Organiza os DWGs
             for dwg in self.dwgs:
                 dwg_path = os.path.join(self.all_dwgs, dwg.material)
                 create_and_move_file(dwg_path, dwg.dwg_name, dwg.dwg_file)
-        
+
         except OSError as e:
             print(f"Erro ao criar pastas ou mover arquivos: {e}")
         except Exception as e:
