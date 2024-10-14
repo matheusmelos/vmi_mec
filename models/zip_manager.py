@@ -49,7 +49,7 @@ class ZipFolderManager:
 
 # Armazena todas as pastas em uma pilha de processamento e ao encontrar um arquivo PDF DXF DWG os armazena criando classes       
     def extract_subfiles(self, root_folder):
-        start_time = time.time()
+       
         pdf_processed = set()
         dxf_processed = set()
         dwg_processed = set()
@@ -118,43 +118,62 @@ class ZipFolderManager:
         
 # Cria pastas de acordo o material de cada projeto e os move de uma forma que todos os arquivos do mesmo tipo fiquem agrupados de acordo o seu material
     def organize_folders(self):
-    
+        
         def create_and_move_file(file_path, file_name, file_src):
-            if not os.path.exists(file_path):
-                os.makedirs(file_path)
+            try:
+                # Cria a pasta se não existir
+                if not os.path.exists(file_path):
+                    os.makedirs(file_path)
+                
+                destino_path = os.path.join(file_path, file_name)
+                
+                # Remove o arquivo de destino se ele já existir
+                if os.path.exists(destino_path):
+                    os.remove(destino_path)
+                
+                # Move o arquivo para o destino
+                shutil.move(file_src, destino_path)
             
-            destino_path = os.path.join(file_path, file_name)
+            except OSError as e:
+                print(f"Erro ao criar ou mover o arquivo {file_name}: {e}")
+            except Exception as e:
+                print(f"Ocorreu um erro inesperado ao mover {file_name}: {e}")
+        
+        try:
+            # Cria as pastas caso não existam
+            for directory in [self.all_pdfs, self.all_dxfs, self.all_dwgs]:
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
             
-            if os.path.exists(destino_path):
-                os.remove(destino_path)
+            # Organiza os PDFs
+            for pdf in self.pdfs:
+                pdf_path = os.path.join(self.all_pdfs, pdf.material)
+                create_and_move_file(pdf_path, pdf.pdf_name, pdf.pdf_file)
+                
+                # Associa o material dos PDFs aos DXFs e DWGs correspondentes
+                for dxf in self.dxfs:
+                    if pdf.name in dxf.dxf_name:
+                        dxf.material = pdf.material
+                
+                for dwg in self.dwgs:
+                    if pdf.name in dwg.dwg_name:
+                        dwg.material = pdf.material
             
-            shutil.move(file_src, destino_path)
-        
-        
-        for directory in [self.all_pdfs, self.all_dxfs, self.all_dwgs]:
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-        
-        
-        for pdf in self.pdfs:
-            pdf_path = os.path.join(self.all_pdfs, pdf.material)
-            create_and_move_file(pdf_path, pdf.pdf_name, pdf.pdf_file)
-            
+            # Organiza os DXFs
             for dxf in self.dxfs:
-                if pdf.name in dxf.dxf_name:
-                    dxf.material = pdf.material
+                dxf_path = os.path.join(self.all_dxfs, dxf.material)
+                create_and_move_file(dxf_path, dxf.dxf_name, dxf.dxf_file)  
             
+            # Organiza os DWGs
             for dwg in self.dwgs:
-                if pdf.name in dwg.dwg_name:
-                    dwg.material = pdf.material
+                dwg_path = os.path.join(self.all_dwgs, dwg.material)
+                create_and_move_file(dwg_path, dwg.dwg_name, dwg.dwg_file)
         
-        for dxf in self.dxfs:
-            dxf_path = os.path.join(self.all_dxfs, dxf.material)
-            create_and_move_file(dxf_path, dxf.dxf_name, dxf.dxf_file)  
-        
-        for dwg in self.dwgs:
-            dwg_path = os.path.join(self.all_dwgs, dwg.material)
-            create_and_move_file(dwg_path, dwg.dwg_name, dwg.dwg_file)
+        except OSError as e:
+            print(f"Erro ao criar pastas ou mover arquivos: {e}")
+        except Exception as e:
+            print(f"Ocorreu um erro inesperado: {e}")
+
 
 # Une PDF e DXF correspondentes, e salva em uma planilha os dados  
     def create_sheet(self):
