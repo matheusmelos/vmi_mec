@@ -120,19 +120,15 @@ class ZipFolderManager:
     
 
     def organize_folders(self):
-        
         def create_and_move_file(file_path, file_name, file_src):
             try:
                 # Cria a pasta se não existir
                 if not os.path.exists(file_path):
                     os.makedirs(file_path)
                     
-                    # Ajusta permissões da pasta (rwx para o dono, rx para grupo e outros)
-                    os.chmod(file_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+                    # Dá permissão total (rwx) para todos os grupos (777)
+                    os.chmod(file_path, 0o777)
                     
-                    # Opcionalmente, ajuste o dono/grupo (substitua 'user' e 'group' pelos corretos)
-                    # os.chown(file_path, uid, gid)
-
                 destino_path = os.path.join(file_path, file_name)
                 
                 # Remove o arquivo de destino se ele já existir
@@ -142,12 +138,9 @@ class ZipFolderManager:
                 # Move o arquivo para o destino
                 shutil.move(file_src, destino_path)
 
-                # Ajusta permissões do arquivo (rw para o dono, r para grupo e outros)
-                os.chmod(destino_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
+                # Dá permissão total (rwx) para todos os grupos (777) no arquivo movido
+                os.chmod(destino_path, 0o777)
                 
-                # Opcionalmente, ajuste o dono/grupo do arquivo
-                # os.chown(destino_path, uid, gid)
-
             except OSError as e:
                 print(f"Erro ao criar ou mover o arquivo {file_name}: {e}")
             except Exception as e:
@@ -159,11 +152,8 @@ class ZipFolderManager:
                 if not os.path.exists(directory):
                     os.makedirs(directory)
                     
-                    # Ajusta permissões da pasta (rwx para o dono, rx para grupo e outros)
-                    os.chmod(directory, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
-
-                    # Opcionalmente, ajuste o dono/grupo
-                    # os.chown(directory, uid, gid)
+                    # Dá permissão total (rwx) para todos os grupos (777)
+                    os.chmod(directory, 0o777)
 
             # Organiza os PDFs
             for pdf in self.pdfs:
@@ -193,7 +183,6 @@ class ZipFolderManager:
             print(f"Erro ao criar pastas ou mover arquivos: {e}")
         except Exception as e:
             print(f"Ocorreu um erro inesperado: {e}")
-
 
 # Une PDF e DXF correspondentes, e salva em uma planilha os dados  
     def create_sheet(self):
