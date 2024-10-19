@@ -1,7 +1,7 @@
 :root {
     --light-gray: #FAF9F9;
-    --light-blue: #ABDFFF;
-    --dark-blue: #3E57DA;
+    --light-blue: #494949;
+    --dark-blue: #F2B320;
     --gray: #656C86;
     --black: #333333;
     --background-color-gray: #F5F5F5;
@@ -167,7 +167,7 @@ p {
 /*------------- FOOTER -------------*/
 
 footer {
-    background-color: #0D0F2C;
+    background-color: #1A1C20;
     padding-top: 1.5rem;
     position: absolute;
     bottom: 0;
