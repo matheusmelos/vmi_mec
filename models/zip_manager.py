@@ -5,8 +5,9 @@ import openpyxl
 import rarfile
 import zipfile
 import shutil
-import stat
 import os
+
+rarfile.UNRAR_TOOL = 'usr/bin/unrar'
 
 # Processa o arquivo .zip de entrada e os 'transforma' em um Arquivo.zip e uma planilha
 class ZipFolderManager:
@@ -30,8 +31,7 @@ class ZipFolderManager:
         self.organize_folders()
         self.sheets = ZipFolderManager.create_sheet(self)
         self.processed_zip = ZipFolderManager.zip_file_process(self)
-        self.clean_all()
-
+            
 # Recebe a pasta .zip e realiza a primeira descompactação              
     def extract_folder(self):
        
@@ -117,8 +117,6 @@ class ZipFolderManager:
                             dwg_processed.add(file_path)
         
 # Cria pastas de acordo o material de cada projeto e os move de uma forma que todos os arquivos do mesmo tipo fiquem agrupados de acordo o seu material
-    
-
     def organize_folders(self):
         def create_and_move_file(file_path, file_name, file_src):
             try:
@@ -259,6 +257,12 @@ class ZipFolderManager:
             shutil.move(relatorio, self.organization_folder_zip)
             
         zip_file_processed = zip_folder(self.organization_folder_zip, all_zip)
+        
+        destino_path = os.path.join("uploads", zip_file_processed)
+        
+        if os.path.exists(destino_path):
+                    os.remove(destino_path)
+        
         shutil.move(zip_file_processed, "uploads")
 
         return zip_file_processed
@@ -270,5 +274,7 @@ class ZipFolderManager:
         if os.path.exists(self.organization_folder):
             shutil.rmtree(self.organization_folder)
         if os.path.exists(self.organization_folder_zip):
-            shutil.rmtree(self.organization_folder_zip)     
- 
+            shutil.rmtree(self.organization_folder_zip)
+        if os.path.exists(self.folder):
+            os.remove(self.folder)    
+        
