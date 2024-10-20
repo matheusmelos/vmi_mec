@@ -35,8 +35,10 @@ class ZipFolderManager:
 # Recebe a pasta .zip e realiza a primeira descompactação              
     def extract_folder(self):
        
-        if not os.path.exists(self.extraction_folder):
-            os.makedirs(self.extraction_folder)
+        if os.path.exists(self.extraction_folder):
+            shutil.rmtree(self.extraction_folder)
+        
+        os.makedirs(self.extraction_folder)
 
         if self.folder.lower().endswith('.zip'):
             with zipfile.ZipFile(self.folder, 'r') as archive:
@@ -147,11 +149,13 @@ class ZipFolderManager:
         try:
             # Cria as pastas caso não existam
             for directory in [self.all_pdfs, self.all_dxfs, self.all_dwgs]:
-                if not os.path.exists(directory):
-                    os.makedirs(directory)
+                if os.path.exists(directory):
+                    shutil.rmtree(directory)
+                
+                os.makedirs(directory)
                     
-                    # Dá permissão total (rwx) para todos os grupos (777)
-                    os.chmod(directory, 0o777)
+                # Dá permissão total (rwx) para todos os grupos (777)
+                os.chmod(directory, 0o777)
 
             # Organiza os PDFs
             for pdf in self.pdfs:
@@ -245,8 +249,10 @@ class ZipFolderManager:
         zip_dxfs = zip_folder(self.all_dxfs, dxfs_zip)
         zip_dwgs = zip_folder(self.all_dwgs, dwgs_zip)
         
-        if not os.path.exists(self.organization_folder_zip):
-            os.makedirs(self.organization_folder_zip) 
+        if os.path.exists(self.organization_folder_zip):
+            shutil.rmtree(self.organization_folder_zip)
+        
+        os.makedirs(self.organization_folder_zip) 
         
         shutil.move(zip_pdfs, self.organization_folder_zip)
         shutil.move(zip_dxfs, self.organization_folder_zip)
@@ -261,7 +267,7 @@ class ZipFolderManager:
         destino_path = os.path.join("uploads", zip_file_processed)
         
         if os.path.exists(destino_path):
-                    os.remove(destino_path)
+            os.remove(destino_path)
         
         shutil.move(zip_file_processed, "uploads")
 
