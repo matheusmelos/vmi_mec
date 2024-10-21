@@ -2,12 +2,11 @@ from models.pdf_manager import PDF
 from models.dxf_manager import DXF
 from models.dwg_manager import DWG
 import openpyxl
-import rarfile
+import patoolib
+from patoolib.util import PatoolError
 import zipfile
 import shutil
 import os
-
-rarfile.UNRAR_TOOL = 'usr/bin/unrar'
 
 # Processa o arquivo .zip de entrada e os 'transforma' em um Arquivo.zip e uma planilha
 class ZipFolderManager:
@@ -32,22 +31,34 @@ class ZipFolderManager:
         self.sheets = ZipFolderManager.create_sheet(self)
         self.processed_zip = ZipFolderManager.zip_file_process(self)
             
-# Recebe a pasta .zip e realiza a primeira descompactação              
+# Recebe a pasta e realiza a primeira descompactação              
     def extract_folder(self):
        
-        if os.path.exists(self.extraction_folder):
-            shutil.rmtree(self.extraction_folder)
+        try:
+            # Remove a pasta de extração se já existir
+            if os.path.exists(self.extraction_folder):
+                shutil.rmtree(self.extraction_folder)
+            
+            # Cria a pasta de extração
+            os.makedirs(self.extraction_folder)
         
-        os.makedirs(self.extraction_folder)
+            # Tenta extrair o arquivo compactado
+            patoolib.extract_archive(self.folder, outdir=self.extraction_folder)
 
-        if self.folder.lower().endswith('.zip'):
-            with zipfile.ZipFile(self.folder, 'r') as archive:
-                archive.extractall(self.extraction_folder)
-        elif self.folder.lower().endswith('.rar'):
-            with rarfile.RarFile(self.folder, 'r') as archive:
-                archive.extractall(self.extraction_folder)
-    
-        self.extract_subfiles(self.extraction_folder)
+            # Processa os subarquivos extraídos
+            self.extract_subfiles(self.extraction_folder)
+
+        except PatoolError as e:
+            # Tratamento para erros específicos do patoolib
+            print(f"Erro ao extrair o arquivo: {e}")
+        
+        except FileNotFoundError as e:
+            # Tratamento para caso o arquivo de entrada não seja encontrado
+            print(f"Arquivo não encontrado: {e}")
+        
+        except Exception as e:
+            # Tratamento para quaisquer outros erros inesperados
+            print(f"Ocorreu um erro inesperado: {e}")
 
 # Armazena todas as pastas em uma pilha de processamento e ao encontrar um arquivo PDF DXF DWG os armazena criando classes       
     def extract_subfiles(self, root_folder):
@@ -71,34 +82,27 @@ class ZipFolderManager:
 
                     processed_files.add(file_path)
 
-                    if file.lower().endswith('.zip'):
-                       
+                    if file.lower().endswith(('.zip', '.rar')):
                         sub_destino = os.path.join(root, os.path.splitext(file)[0])
                         os.makedirs(sub_destino, exist_ok=True)
+
                         try:
-                            
-                            with zipfile.ZipFile(file_path, 'r') as sub_archive:
-                                sub_archive.extractall(sub_destino)
-                                
+                            # Usa patoolib para extrair tanto ZIP quanto RAR
+                            patoolib.extract_archive(file_path, outdir=sub_destino)
+
+                            # Remove o arquivo original após a extração
                             os.remove(file_path)
 
+                            # Adiciona o destino extraído à pilha
                             stack.append(sub_destino)
-                        
-                        except zipfile.BadZipFile:
+
+                        except PatoolError:
                             with open("relatorio.txt", "a") as f:
-                                f.write(f"O arquivo {file_path} nao e um ZIP valido ou esta corrompido.\n")
-                    
-                    elif file.lower().endswith('.rar'):
-                        
-                        sub_destino = os.path.join(root, os.path.splitext(file)[0])
-                        os.makedirs(sub_destino, exist_ok=True)
-                        
-                        with rarfile.RarFile(file_path, 'r') as sub_archive:
-                            sub_archive.extractall(sub_destino)
+                                f.write(f"O arquivo {file_path} não é válido ou está corrompido.\n")
 
-                        os.remove(file_path)
-
-                        stack.append(sub_destino)
+                        except Exception as e:
+                            with open("relatorio.txt", "a") as f:
+                                f.write(f"Erro inesperado ao processar o arquivo {file_path}: {str(e)}\n")
 
                     elif file.upper().endswith(".PDF"):
                         if file_path not in pdf_processed:
