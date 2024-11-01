@@ -2,6 +2,7 @@ from models.pdf_manager import PDF
 from models.dxf_manager import DXF
 from models.dwg_manager import DWG
 import openpyxl
+import traceback
 import patoolib
 from patoolib.util import PatoolError
 import zipfile
@@ -96,9 +97,13 @@ class ZipFolderManager:
                             # Adiciona o destino extraído à pilha
                             stack.append(sub_destino)
 
-                        except PatoolError:
+                        except PatoolError as e:
                             with open("relatorio.txt", "a") as f:
-                                f.write(f"O arquivo {file_path} não é válido ou está corrompido.\n")
+                                f.write(f"Erro ao processar o arquivo {file_path}:\n")
+                                f.write(f"{str(e)}\n")
+                                f.write("Detalhes do rastreamento:\n")
+                                f.write(traceback.format_exc())
+                                f.write("\n\n")
 
                         except Exception as e:
                             with open("relatorio.txt", "a") as f:

@@ -17,3 +17,4 @@ rarfile==4.2
 typing_extensions==4.12.2
 unrar==0.4
 Werkzeug==3.0.4
+patool==3.0.2
