@@ -132,6 +132,8 @@ class ZipFolderManager:
                                 pdf = PDF(file_path, os.path.basename(file))
                                 self.pdfs.append(pdf)
                                 pdf_processed.add(file_path)
+                                with open("relatorio.txt", "a") as f:
+                                    f.write(f"Extraiu {file_path}\n")
                         except Exception as e:
                             with open("relatorio.txt", "a") as f:
                                 f.write(f"Erro ao processar o arquivo PDF {file_path}:\n")
@@ -147,6 +149,8 @@ class ZipFolderManager:
                                 dxf = DXF(file_path, os.path.basename(file))
                                 self.dxfs.append(dxf)
                                 dxf_processed.add(file_path)
+                                with open("relatorio.txt", "a") as f:
+                                    f.write(f"Extraiu {file_path}\n")
                         except Exception as e:
                             with open("relatorio.txt", "a") as f:
                                 f.write(f"Erro ao processar o arquivo DXF {file_path}:\n")
@@ -162,6 +166,8 @@ class ZipFolderManager:
                                 dwg = DWG(file_path, os.path.basename(file))
                                 self.dwgs.append(dwg)
                                 dwg_processed.add(file_path)
+                                with open("relatorio.txt", "a") as f:
+                                    f.write(f"Extraiu {file_path}\n")
                         except Exception as e:
                             with open("relatorio.txt", "a") as f:
                                 f.write(f"Erro ao processar o arquivo DWG {file_path}:\n")
