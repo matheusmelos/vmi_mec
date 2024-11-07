@@ -4,15 +4,19 @@ from models.dwg_manager import DWG
 import openpyxl
 import traceback
 import patoolib
+import patoolib.util
 from patoolib.util import PatoolError
 import zipfile
 import shutil
 import os
 
+patoolib.util.PATOOL_PATH = '/usr/bin/unrar'
+
 # Processa o arquivo .zip de entrada e os 'transforma' em um Arquivo.zip e uma planilha
 class ZipFolderManager:
     
     def __init__(self, zip_folder):
+        
         
         self.pdfs = []
         self.dxfs = []
@@ -50,16 +54,29 @@ class ZipFolderManager:
             self.extract_subfiles(self.extraction_folder)
 
         except PatoolError as e:
-            # Tratamento para erros específicos do patoolib
-            print(f"Erro ao extrair o arquivo: {e}")
-        
+           with open("relatorio.txt", "a") as f:
+                f.write(f"Erro ao processar o arquivo {self.folder}:\n")
+                f.write(f"{str(e)}\n")
+                f.write("Detalhes do rastreamento:\n")
+                f.write(traceback.format_exc())
+                f.write("\n\n")
+
         except FileNotFoundError as e:
-            # Tratamento para caso o arquivo de entrada não seja encontrado
-            print(f"Arquivo não encontrado: {e}")
+            
+                with open("relatorio.txt", "a") as f:
+                    f.write(f"Erro ao processar o arquivo {self.folder}:\n")
+                    f.write(f"{str(e)}\n")
+                    f.write("Detalhes do rastreamento:\n")
+                    f.write(traceback.format_exc())
+                    f.write("\n\n")
         
         except Exception as e:
-            # Tratamento para quaisquer outros erros inesperados
-            print(f"Ocorreu um erro inesperado: {e}")
+           with open("relatorio.txt", "a") as f:
+                f.write(f"Erro ao processar o arquivo {self.folder}:\n")
+                f.write(f"{str(e)}\n")
+                f.write("Detalhes do rastreamento:\n")
+                f.write(traceback.format_exc())
+                f.write("\n\n")
 
 # Armazena todas as pastas em uma pilha de processamento e ao encontrar um arquivo PDF DXF DWG os armazena criando classes       
     def extract_subfiles(self, root_folder):
