@@ -4,13 +4,12 @@ from models.dwg_manager import DWG
 import openpyxl
 import traceback
 import patoolib
-import patoolib.util
 from patoolib.util import PatoolError
 import zipfile
 import shutil
 import os
 
-patoolib.util.PATOOL_PATH = '/usr/bin/'
+os.environ["PATH"] += os.pathsep + "/usr/bin"
 
 # Processa o arquivo .zip de entrada e os 'transforma' em um Arquivo.zip e uma planilha
 class ZipFolderManager:
