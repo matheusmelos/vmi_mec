@@ -1,10 +1,9 @@
 from models.pdf_manager import PDF
 from models.dxf_manager import DXF
 from models.dwg_manager import DWG
-import openpyxl
 import traceback
-import patoolib
-from patoolib.util import PatoolError
+import openpyxl
+import rarfile
 import zipfile
 import shutil
 import os
@@ -15,7 +14,6 @@ os.environ["PATH"] += os.pathsep + "/usr/bin"
 class ZipFolderManager:
     
     def __init__(self, zip_folder):
-        
         
         self.pdfs = []
         self.dxfs = []
@@ -35,43 +33,33 @@ class ZipFolderManager:
         self.sheets = ZipFolderManager.create_sheet(self)
         self.processed_zip = ZipFolderManager.zip_file_process(self)
             
-# Recebe a pasta e realiza a primeira descompactação              
-    def extract_folder(self):
-       
+# Recebe a pasta .zip e realiza a primeira descompactação              
+    def extract_folder(self): 
         try:
-            # Remove a pasta de extração se já existir
+            # Remove a pasta de extração se ela já existir
             if os.path.exists(self.extraction_folder):
                 shutil.rmtree(self.extraction_folder)
             
             # Cria a pasta de extração
             os.makedirs(self.extraction_folder)
-        
-            # Tenta extrair o arquivo compactado
-            patoolib.extract_archive(self.folder, outdir=self.extraction_folder)
+
+            # Verifica o tipo de arquivo e realiza a extração
+            if self.folder.lower().endswith('.zip'):
+                with zipfile.ZipFile(self.folder, 'r') as archive:
+                    archive.extractall(self.extraction_folder)
+                    
+            elif self.folder.lower().endswith('.rar'):
+                with rarfile.RarFile(self.folder, 'r') as archive:
+                    archive.extractall(self.extraction_folder)
             with open("relatorio.txt", "a") as f:
                 f.write(f"Extraiu a pasta princinpal {self.folder}\n")
-            # Processa os subarquivos extraídos
+            # Chama a função para extrair subarquivos
             self.extract_subfiles(self.extraction_folder)
-
-        except PatoolError as e:
-           with open("relatorio.txt", "a") as f:
-                f.write(f"Erro ao processar o arquivo {self.folder}:\n")
-                f.write(f"{str(e)}\n")
-                f.write("Detalhes do rastreamento:\n")
-                f.write(traceback.format_exc())
-                f.write("\n\n")
-
-        except FileNotFoundError as e:
             
-                with open("relatorio.txt", "a") as f:
-                    f.write(f"Erro ao processar o arquivo {self.folder}:\n")
-                    f.write(f"{str(e)}\n")
-                    f.write("Detalhes do rastreamento:\n")
-                    f.write(traceback.format_exc())
-                    f.write("\n\n")
-        
         except Exception as e:
-           with open("relatorio.txt", "a") as f:
+            # Registra o erro no relatorio.txt
+            with open("relatorio.txt", "a") as f:
+                f.write(f"O arquivo {self.folder} não é válido ou está corrompido.\n")
                 f.write(f"Erro ao processar o arquivo {self.folder}:\n")
                 f.write(f"{str(e)}\n")
                 f.write("Detalhes do rastreamento:\n")
@@ -81,11 +69,11 @@ class ZipFolderManager:
 # Armazena todas as pastas em uma pilha de processamento e ao encontrar um arquivo PDF DXF DWG os armazena criando classes       
     def extract_subfiles(self, root_folder):
         with open("relatorio.txt", "a") as f:
-            f.write(f"Entrou na subfiles {self.folder}\n")
+                f.write(f"Entrou na subfolder {self.folder}\n")
         pdf_processed = set()
         dxf_processed = set()
         dwg_processed = set()
-        processed_files = set() 
+        processed_files = set()
         
         stack = [root_folder]
 
@@ -101,54 +89,91 @@ class ZipFolderManager:
 
                     processed_files.add(file_path)
 
-                    if file.lower().endswith(('.zip', '.rar')):
+                    # Tratamento de erro para arquivos ZIP
+                    if file.lower().endswith('.zip'):
                         sub_destino = os.path.join(root, os.path.splitext(file)[0])
                         os.makedirs(sub_destino, exist_ok=True)
-
                         try:
-                            # Usa patoolib para extrair tanto ZIP quanto RAR
-                            patoolib.extract_archive(file_path, outdir=sub_destino)
-
-                            # Remove o arquivo original após a extração
+                            with zipfile.ZipFile(file_path, 'r') as sub_archive:
+                                sub_archive.extractall(sub_destino)
                             os.remove(file_path)
-
-                            # Adiciona o destino extraído à pilha
                             stack.append(sub_destino)
-
-                        except PatoolError as e:
+                        except zipfile.BadZipFile as e:
                             with open("relatorio.txt", "a") as f:
+                                f.write(f"O arquivo {file_path} não é um ZIP válido ou está corrompido.\n")
                                 f.write(f"Erro ao processar o arquivo {file_path}:\n")
                                 f.write(f"{str(e)}\n")
                                 f.write("Detalhes do rastreamento:\n")
                                 f.write(traceback.format_exc())
                                 f.write("\n\n")
 
+                    # Tratamento de erro para arquivos RAR
+                    elif file.lower().endswith('.rar'):
+                        sub_destino = os.path.join(root, os.path.splitext(file)[0])
+                        os.makedirs(sub_destino, exist_ok=True)
+                        try:
+                            with rarfile.RarFile(file_path, 'r') as sub_archive:
+                                sub_archive.extractall(sub_destino)
+                            os.remove(file_path)
+                            stack.append(sub_destino)
+                        except rarfile.Error as e:
+                            with open("relatorio.txt", "a") as f:
+                                f.write(f"O arquivo {file_path} não é um RAR válido ou está corrompido.\n")
+                                f.write(f"Erro ao processar o arquivo {file_path}:\n")
+                                f.write(f"{str(e)}\n")
+                                f.write("Detalhes do rastreamento:\n")
+                                f.write(traceback.format_exc())
+                                f.write("\n\n")
+
+                    # Tratamento de erro para arquivos PDF
+                    elif file.upper().endswith(".PDF"):
+                        try:
+                            if file_path not in pdf_processed:
+                                pdf = PDF(file_path, os.path.basename(file))
+                                self.pdfs.append(pdf)
+                                pdf_processed.add(file_path)
                         except Exception as e:
                             with open("relatorio.txt", "a") as f:
-                                f.write(f"Erro inesperado ao processar o arquivo {file_path}: {str(e)}\n")
+                                f.write(f"Erro ao processar o arquivo PDF {file_path}:\n")
+                                f.write(f"{str(e)}\n")
+                                f.write("Detalhes do rastreamento:\n")
+                                f.write(traceback.format_exc())
+                                f.write("\n\n")
 
-                    elif file.upper().endswith(".PDF"):
-                        if file_path not in pdf_processed:
-                            pdf = PDF(file_path, os.path.basename(file))
-                            self.pdfs.append(pdf)
-                            pdf_processed.add(file_path)
-                    
+                    # Tratamento de erro para arquivos DXF
                     elif file.upper().endswith(".DXF"):
-                        if file_path not in dxf_processed:
-                            dxf = DXF(file_path, os.path.basename(file))
-                            self.dxfs.append(dxf)
-                            dxf_processed.add(file_path)
+                        try:
+                            if file_path not in dxf_processed:
+                                dxf = DXF(file_path, os.path.basename(file))
+                                self.dxfs.append(dxf)
+                                dxf_processed.add(file_path)
+                        except Exception as e:
+                            with open("relatorio.txt", "a") as f:
+                                f.write(f"Erro ao processar o arquivo DXF {file_path}:\n")
+                                f.write(f"{str(e)}\n")
+                                f.write("Detalhes do rastreamento:\n")
+                                f.write(traceback.format_exc())
+                                f.write("\n\n")
 
+                    # Tratamento de erro para arquivos DWG
                     elif file.upper().endswith(".DWG"):
-                        if file_path not in dwg_processed:
-                            dwg = DWG(file_path, os.path.basename(file))
-                            self.dwgs.append(dwg) 
-                            dwg_processed.add(file_path)
-        
+                        try:
+                            if file_path not in dwg_processed:
+                                dwg = DWG(file_path, os.path.basename(file))
+                                self.dwgs.append(dwg)
+                                dwg_processed.add(file_path)
+                        except Exception as e:
+                            with open("relatorio.txt", "a") as f:
+                                f.write(f"Erro ao processar o arquivo DWG {file_path}:\n")
+                                f.write(f"{str(e)}\n")
+                                f.write("Detalhes do rastreamento:\n")
+                                f.write(traceback.format_exc())
+                                f.write("\n\n")
+       
 # Cria pastas de acordo o material de cada projeto e os move de uma forma que todos os arquivos do mesmo tipo fiquem agrupados de acordo o seu material
     def organize_folders(self):
         with open("relatorio.txt", "a") as f:
-            f.write(f"Entrou na organize {self.folder}\n")
+                f.write(f"Entrou na organizer {self.folder}\n")
         def create_and_move_file(file_path, file_name, file_src):
             try:
                 # Cria a pasta se não existir
@@ -176,6 +201,7 @@ class ZipFolderManager:
                 print(f"Ocorreu um erro inesperado ao mover {file_name}: {e}")
 
         try:
+           
             # Cria as pastas caso não existam
             for directory in [self.all_pdfs, self.all_dxfs, self.all_dwgs]:
                 if os.path.exists(directory):
@@ -218,7 +244,7 @@ class ZipFolderManager:
 # Une PDF e DXF correspondentes, e salva em uma planilha os dados  
     def create_sheet(self):
         with open("relatorio.txt", "a") as f:
-            f.write(f"Criou planilha {self.folder}\n")
+                f.write(f"Entrou na planilha {self.folder}\n")
         sheet_name = 'Arquivo.xlsx'
         exist_file = os.path.exists(sheet_name)
         
@@ -259,7 +285,7 @@ class ZipFolderManager:
 # Realiza a compactação das pastas criadas                   
     def zip_file_process(self):
         with open("relatorio.txt", "a") as f:
-            f.write(f"Processed zip criado {self.folder}\n")
+                f.write(f"Criou o processed {self.folder}\n")
         all_zip = "ProcessedFiles.zip"
         relatorio = "relatorio.txt"
         pdfs_zip = "PDFs.zip"
@@ -307,7 +333,7 @@ class ZipFolderManager:
 # Apaga pastas criadas durante o processo    
     def clean_all(self):
         with open("relatorio.txt", "a") as f:
-            f.write(f"limpou! {self.folder}\n")
+                f.write(f"Limpou! {self.folder}\n")
         if os.path.exists(self.extraction_folder):
             shutil.rmtree(self.extraction_folder)
         if os.path.exists(self.organization_folder):
