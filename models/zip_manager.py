@@ -48,7 +48,8 @@ class ZipFolderManager:
         
             # Tenta extrair o arquivo compactado
             patoolib.extract_archive(self.folder, outdir=self.extraction_folder)
-
+            with open("relatorio.txt", "a") as f:
+                f.write(f"Extraiu a pasta princinpal {self.folder}\n")
             # Processa os subarquivos extraídos
             self.extract_subfiles(self.extraction_folder)
 
@@ -79,7 +80,8 @@ class ZipFolderManager:
 
 # Armazena todas as pastas em uma pilha de processamento e ao encontrar um arquivo PDF DXF DWG os armazena criando classes       
     def extract_subfiles(self, root_folder):
-       
+        with open("relatorio.txt", "a") as f:
+            f.write(f"Entrou na subfiles {self.folder}\n")
         pdf_processed = set()
         dxf_processed = set()
         dwg_processed = set()
@@ -145,6 +147,8 @@ class ZipFolderManager:
         
 # Cria pastas de acordo o material de cada projeto e os move de uma forma que todos os arquivos do mesmo tipo fiquem agrupados de acordo o seu material
     def organize_folders(self):
+        with open("relatorio.txt", "a") as f:
+            f.write(f"Entrou na organize {self.folder}\n")
         def create_and_move_file(file_path, file_name, file_src):
             try:
                 # Cria a pasta se não existir
@@ -213,7 +217,8 @@ class ZipFolderManager:
 
 # Une PDF e DXF correspondentes, e salva em uma planilha os dados  
     def create_sheet(self):
-        
+        with open("relatorio.txt", "a") as f:
+            f.write(f"Criou planilha {self.folder}\n")
         sheet_name = 'Arquivo.xlsx'
         exist_file = os.path.exists(sheet_name)
         
@@ -253,7 +258,8 @@ class ZipFolderManager:
  
 # Realiza a compactação das pastas criadas                   
     def zip_file_process(self):
-        
+        with open("relatorio.txt", "a") as f:
+            f.write(f"Processed zip criado {self.folder}\n")
         all_zip = "ProcessedFiles.zip"
         relatorio = "relatorio.txt"
         pdfs_zip = "PDFs.zip"
@@ -300,6 +306,8 @@ class ZipFolderManager:
 
 # Apaga pastas criadas durante o processo    
     def clean_all(self):
+        with open("relatorio.txt", "a") as f:
+            f.write(f"limpou! {self.folder}\n")
         if os.path.exists(self.extraction_folder):
             shutil.rmtree(self.extraction_folder)
         if os.path.exists(self.organization_folder):
