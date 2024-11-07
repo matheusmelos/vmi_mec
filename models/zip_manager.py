@@ -10,7 +10,7 @@ import zipfile
 import shutil
 import os
 
-patoolib.util.PATOOL_PATH = '/usr/bin/unrar'
+patoolib.util.PATOOL_PATH = '/usr/bin/'
 
 # Processa o arquivo .zip de entrada e os 'transforma' em um Arquivo.zip e uma planilha
 class ZipFolderManager:
