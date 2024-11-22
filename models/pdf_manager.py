@@ -1,4 +1,5 @@
 import fitz
+import pandas as pd
 
 class PDF: 
     def __init__(self, pdf_file, pdf_name):
@@ -12,6 +13,10 @@ class PDF:
         self.title = PDF.search_title(self)
         self.material, self.espessura = PDF.search_material_espessura(self)
         self.dobras = PDF.count_folds(self)
+        self.protheus = PDF.protheus_code(self)
+        self.code = ' '
+        self.data  = PDF.data_material(self)
+    
     
     def filter_name(pdf_name):
         return pdf_name[:-4]
@@ -188,6 +193,62 @@ class PDF:
         doc.close()
         return title
 
+    def found_espessura(self, base):
+        
+        if any(char.isalpha() for char in base) or base == '':
+            return base
+        else: 
+            
+            espessura = float(((((base.upper()).replace("MM", ""))).replace(",", ".")).strip())
+            
+            if espessura < 0.9:
+                espessura = 0.45
+            elif 0.5 < espessura < 1:
+                espessura = 0.9
+            elif 1 < espessura < 1.5:
+                espessura == 1.2
+            elif 1.2 < espessura < 1.8:
+                espessura = 1.5
+            elif 1.5 < espessura <= 2:
+                espessura = 1.9
+            elif 2 < espessura < 3:
+                espessura = 2.65
+            elif 2.7 < espessura < 4:
+                espessura = 3
+            elif 3 < espessura < 5:
+                espessura = 4.75
+            elif 5 < espessura < 7:
+                espessura = 6.35
+            elif 7 < espessura < 9:
+                espessura = 8
+            elif 8 < espessura < 10:
+                espessura = 9.5
+            elif 10 < espessura < 13:
+                espessura = 12.7
+            elif 13 < espessura < 19:
+                espessura = 16
+            else:
+                espessura = 19
+            
+            return espessura     
+    
+    def type_material (self, material):
+       
+        base = str(((material.upper()).replace("Ç", "C")).strip())
+        type_material = ' '
+        
+    
+        if 'GALV' in base:
+            type_material = 'ACO GALVANIZADO'
+        elif 'ACO CARB' or 'SAE' in base:
+            type_material =  'ACO CARBONO'
+        elif 'ACO INOX' or 'AISI' in base:
+            type_material = 'ACO INOX'
+        elif 'ALUM' in base:
+            type_material = 'ALUMINIO'
+
+        return type_material
+    
     def search_material_espessura(self):
         doc = fitz.open(self.pdf_file)
         page = doc.load_page(0)
@@ -237,21 +298,30 @@ class PDF:
             rect_material = fitz.Rect(930, 645, 1045, 660)
                         
         text_material = page.get_text("text", clip=rect_material)
-        material = str((text_material.strip()).replace("/", "-")).replace("\n", "")
-
+        material = str((((text_material.strip()).replace("/", "-"))).replace("\n", ""))
+        type = ' '
+        
+        if  'VER TABELA' == material.upper() :
+            type = material
+            
+        else:
+            type = self.type_material(material)
+        
         if rect_espessura:
-            text_espessura = page.get_text("text", clip=rect_espessura)
-            espessura = str(text_espessura.replace("mm", "").replace(",", ".").strip())
+            text = page.get_text("text", clip=rect_espessura)
+            text_espessura = ((((text.upper()).replace("MM", ""))).replace(",", ".")).strip()
+            espessura = self.found_espessura(text_espessura)
         else:
             if "mm" in material:
-                espessura = ((material[-6:].replace("mm","")).replace(",",".")).replace("#", "")
+                espessura = float((((material[-6:].replace("mm","")).replace(",", "."))).replace("#", ""))
             elif "MM" in material:
-                espessura = ((material[-6:].replace("MM","")).replace(",",".")).replace("#", "")
+                espessura = float((((material[-6:].replace("MM","")).replace(",", "."))).replace("#", ""))
             else:
-                espessura = "Not found"
+                espessura = 0
         doc.close()
-        return material, espessura 
-            
+        
+        return type, espessura 
+   
     def count_folds(self):
         
         doc = fitz.open(self.pdf_file)
@@ -269,6 +339,124 @@ class PDF:
             dobras_total += (dobras_baixo + dobras_cima + dobras_up + dobras_down)
             
         doc.close()
-        
+ 
         return dobras_total
 
+    def protheus_code(self):
+        protheus_code = str(self.name + "-" + self.revisao + "-" + self.title)
+        return protheus_code
+
+    def data_material(self):
+        
+        # dataframes of materials
+        data_aco_galvanizado = {
+            "Codigo": ["0000000000", "0000000174", "0000000098", "0000000099", "0000000100", "0000000117", "0000000000"],
+            "Espessura (mm)": [0.45, 0.9, 1.2, 1.5, 1.9, 2.65, 3],
+            "Descricao": [
+                "CHAPA DE ACO GALVANIZADO  #26 0.45X1200X3000",
+                "CHAPA DE ACO GALVANIZADO #20 0.9X1200X3000",
+                "CHAPA DE ACO GALVANIZADO #18 1.25X1200X3000",
+                "CHAPA DE ACO GALVANIZADO #16 1.55X1200X3000",
+                "CHAPA DE ACO GALVANIZADO #14 1.95X1200X3000",
+                "CHAPA DE ACO GALVANIZADO #12 2.65X1200X3000",
+                "CHAPA DE ACO GALVANIZADO #11 3.05X1200X3000"
+            ],
+        }
+
+        data_aco_carbono = {
+            "Codigo": [
+                "0000000000", "0000000084", "0000000090", "0000000085", "0000000192", "0000000119", 
+                "0000000087", "0000000088", "0000000089", "0000000095", "0000000096", 
+                "0000000120", "0000000000", "0000000000"
+            ],
+            "Espessura (mm)": [
+                0.45, 0.9, 1.2, 1.5, 1.9, 2.65, 3, 4.75, 6.35, 8, 9.5, 12.7, 16, 19
+            ],
+            "Descricao": [
+                "CHAPA ACO CARBONO #26 0.45X1200X3000",
+                "CHAPA ACO CARBONO #20 0.90X1200X3000",
+                "CHAPA ACO CARBONO #18 1.20X1200X3000",
+                "CHAPA ACO CARBONO #16 1.50X1200X3000",
+                "CHAPA ACO CARBONO #14 1,9MMX1200X3000",
+                "CHAPA ACO CARBONO #12 2.65X1200X3000",
+                "CHAPA ACO CARBONO #1-8 3.0X1200X3000",
+                "CHAPA ACO CARBONO #3-16 4.75X1200X3000",
+                "CHAPA ACO CARBONO #1-4 6,35X1200X3000",
+                "CHAPA ACO CARBONO #5-16 8MMX1200X3000",
+                "CHAPA ACO CARBONO #3-8 9,5X1200X3000",
+                "CHAPA ACO CARBONO #1-2 12,7X1200X3000",
+                "CHAPA ACO CARBONO #1020 GR 5-8 16MMX1000X1500",
+		        "CHAPA ACO CARBONO #1020 GR 3-4 19MMX1000X2000"
+            ]
+        }
+        
+        data_aco_inox = {
+            "Codigo": ["0000000000","0000000153", "0000000121", "0000000106", "0000000254", "0000000000"],
+            "Espessura (mm)": [0.9, 1.2, 1.5, 1.9, 2.65, 3],
+            "Descricao": [
+                "CHAPA INOX AISI 304 #20 0,9X1200X3000MM"
+                "CHAPA INOX AISI 304  #18 1,2X1200X3000MM",
+                "CHAPA INOX #16 1,5X1200X3000MM",
+                "CHAPA INOX #14 2,0X1200X3000MM",
+                "CHAPA INOX AISI 304 2,50X1200X3000MM",
+                "CHAPA INOX AISI 304 1-8 3X1200X3000MM"
+            ]
+        }
+
+        data_aluminio = {
+            "Codigo": ["0000000000","0000000159","0000000000", "0000000111", "0000000110", "0000000220"],
+            "Espessura (mm)": [0.9, 1.2, 1.5, 1.9, 3.0, 6.35],
+            "Descricao": [
+                "CHAPA LISA ALUMINIO LIGA 1200H14 2000X1000X0,9 MM",
+                "CHAPA LISA ALUMINIO LIGA 1200H14 3000X1200X1,2",
+                "CHAPA LISA ALUMINIO LIGA 1200H14  2000X1000X1,5 MM",
+                "CHAPA LISA ALUMINIO LIGA 1200H14 2000X1250X2,00",
+                "CHAPA LISA  ALUMINIO 3000X1200X3,0",
+                "CHAPA LISA ALUMINIO LIGA 1200 1-4 2000X1000",
+            ]
+        }
+
+        busca = None
+        
+        if  "ACO GALVANIZADO" in self.material.upper() :
+        
+            aco_galvanizado = pd.DataFrame(data_aco_galvanizado)
+            espessura_consulta = (self.espessura)
+           
+
+            busca = aco_galvanizado.loc[
+                (aco_galvanizado["Espessura (mm)"] == espessura_consulta),
+                ["Codigo", "Descricao"]  # Selecionar múltiplas colunas
+            ]
+            
+        elif "ACO INOX" in self.material.upper() :
+            aco_inox = pd.DataFrame(data_aco_inox)
+            espessura_consulta = (self.espessura)
+
+            busca = aco_inox.loc[
+                (aco_inox["Espessura (mm)"] == espessura_consulta),
+                ["Codigo", "Descricao"]  # Selecionar múltiplas colunas
+            ]
+
+        elif  "ACO CARB" in self.material.upper():
+            aco = pd.DataFrame(data_aco_carbono)
+            espessura_consulta = (self.espessura)
+
+            busca = aco.loc[
+                (aco["Espessura (mm)"] == espessura_consulta),
+                ["Codigo", "Descricao"]  # Selecionar múltiplas colunas
+            ]
+        
+        elif "ALUMINIO" in self.material.upper() :
+            aluminio = pd.DataFrame(data_aluminio)
+            espessura_consulta = float(self.espessura)
+
+            busca = aluminio.loc[
+                (aluminio["Espessura (mm)"] == espessura_consulta),
+                ["Codigo", "Descricao"]  # Selecionar múltiplas colunas
+            ]
+        
+        if busca is not None and not busca.empty:
+            self.code, self.material = busca.iloc[0]
+        else:
+            self.code = 'Não encontrado'
