@@ -10,9 +10,11 @@ class DXF:
         self.comprimento = 0
         self.area = 0
         self.cut_speed = 167
+        self.lote_min = 0
         self.perimeter = DXF.calculate_perimeter_total(self)
         self.cut_time = DXF.calculate_cut_time(self)
         self.compare_coordinates()
+        self.calculate_quantity()
         
     def calculate_perimeter_total(self):
         doc = ezdxf.readfile(self.dxf_file)
@@ -123,4 +125,29 @@ class DXF:
         self.largura = max_y - min_y
         self.area = (self.comprimento*self.largura)/1000000
         
-
+    def calculate_quantity(self):
+            
+            chapa_largura = 1200 - 50
+            chapa_comprimento_30 = 1000 -50
+            resultados = []
+                                    
+            largura_X = chapa_largura/self.comprimento
+                                
+            largura_Y = chapa_largura/self.largura
+                                                    
+            comprimento_X = chapa_comprimento_30/self.comprimento
+                                                
+            comprimento_Y = chapa_comprimento_30/self.largura
+        
+            
+            resultado_1 =  largura_X*comprimento_Y
+            resultado_2 = largura_Y*comprimento_X
+            
+            resultados.append(resultado_1)
+            resultados.append(resultado_2)
+            
+            perda_5 = 0.95
+            perda_retalhos = 0.9
+            max_pecas = min(resultados)
+            self.lote_min = ((max_pecas)*perda_5)*perda_retalhos
+            
