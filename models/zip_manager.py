@@ -16,6 +16,8 @@ class ArquivoGrupo:
         self.pdfs = []
         self.dxfs = []
         self.dwgs = []
+        self.rows_to_add_first = []
+        self.rows_to_add = []
 
     def adicionar_arquivo(self, arquivo_obj):
         """Adiciona objetos aos grupos relevantes."""
@@ -45,7 +47,7 @@ class ZipFolderManager:
         
         self.folder = zip_folder
         
-        self.extraction_folder = 'Extractedfiles'
+        self.extraction_folder = "DESENHOS PDFs"
         self.organization_folder = 'OrganizedFiles'
         self.organization_folder_zip = 'OrganizedFilesZip'
         self.all_pdfs = 'OrganizedFiles/PDFs'
@@ -136,51 +138,70 @@ class ZipFolderManager:
                 f.write(f"Erro ao processar o arquivo {file_path}:\n{str(erro)}\n")
 
     def create_sheet(self):
-            pdf_files_used = set()
-            rows_to_add = [] 
-            sheet_name = 'Arquivo.xlsx'
-            exist_file = os.path.exists(sheet_name)
-                
-            if exist_file:
-                    wb = openpyxl.load_workbook(sheet_name)
-                    ws = wb.active
-                    
-            else:
-                    wb = openpyxl.Workbook()
-                    ws = wb.active
-                    ws.title = "Dados"
-                    ws.append(["CÓD. PROTHEUS", "DESCRIÇÃO", "QUANTIDADE", "CÓD. CHAPA", "ESPESSURA", "MATERIAL", 
-                            "COMPRIMENTO", "LARGURA", "ÁREA TOTAL"])
-                    
-                
-            for grupo in self.grupos:
-              
-                for dxf in grupo.dxfs:
-                    for pdf in grupo.pdfs:
-                        if pdf.pdf_file in pdf_files_used:
-                            continue
-                        if pdf.name in dxf.dxf_name:
-                            
-                            rows_to_add.append([" ",pdf.protheus , " ",pdf.code , pdf.espessura, pdf.material, dxf.comprimento, dxf.largura, dxf.area])
-                            pdf_files_used.add(pdf.pdf_file)
-                            break
+  
+        i = 2  # Começando pela linha 2 para a fórmula
+        pdf_files_used = set()
 
+        # Nome da planilha
+        sheet_name = (os.path.splitext(self.folder)[0]) + '.xlsx'
+        exist_file = os.path.exists(sheet_name)
+
+        # Se o arquivo já existir, carregue-o
+        if exist_file:
+            wb = openpyxl.load_workbook(sheet_name)
+            ws = wb.active
+        else:
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "Dados"
+            # Cabeçalho da planilha
+            ws.append(["CÓD. PROTHEUS", "CÓD. PEÇA", "DESCRIÇÃO", "QUANTIDADE", "CÓD. CHAPA", "ESPESSURA", "MATERIAL", 
+                    "COMPRIMENTO", "LARGURA", "ÁREA TOTAL", "LOTE MÍNIMO (30% DA CHAPA)"])
+            ws.append([])
+
+        # Preenche os dados
+        for grupo in self.grupos:
+            for dxf in grupo.dxfs:
                 for pdf in grupo.pdfs:
-                    if pdf.pdf_file not in pdf_files_used:
-                        sb =' - SEM BENEFICIAR'
-                        rows_to_add.append([" ",pdf.protheus, " ",pdf.code , pdf.espessura, pdf.material, " ", " ", " "])
-                        rows_to_add.append([" ",pdf.protheus + sb, " ",pdf.code , pdf.espessura, " ", " ", " ", " "])
+                    if pdf.pdf_file in pdf_files_used:
+                        continue
+                    if pdf.name in dxf.dxf_name:
+                        grupo.rows_to_add.append([" ", pdf.name, pdf.protheus, " ", pdf.code, pdf.espessura, pdf.material, 
+                                                dxf.comprimento, dxf.largura, dxf.area, dxf.lote_min])
                         pdf_files_used.add(pdf.pdf_file)
-                
-                rows_to_add.append([])
-            
-            
-            for row in rows_to_add:
+                        break
+
+            # Adicionando as linhas do grupo
+            for pdf in grupo.pdfs:
+                if pdf.pdf_file not in pdf_files_used:
+                    sb = ' - SEM BENEFICIAR'
+                    grupo.rows_to_add_first.append([" ", pdf.name, pdf.protheus, " ", pdf.code , pdf.espessura, " ", 
+                                                    " ", " ", " "])
+                    grupo.rows_to_add_first.append([" ", pdf.name, pdf.protheus + sb, " ", pdf.code , pdf.espessura, 
+                                                    " ", " ", " ", " "])
+                    pdf_files_used.add(pdf.pdf_file)
+
+            grupo.rows_to_add.append([])
+
+        # Inserindo os dados e as fórmulas dinamicamente
+        for grupo in self.grupos:
+            for row in grupo.rows_to_add_first:
+                ws.append(row)
+            for row in grupo.rows_to_add:
                 ws.append(row)
 
-            wb.save(sheet_name)
-            return sheet_name
-        
+        # Agora, vamos adicionar a fórmula na coluna "QUANTIDADE" (coluna D, 4ª coluna)
+        for i, row in enumerate(ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=2, max_col=2), start=2):
+            # Apenas insere a fórmula na coluna "QUANTIDADE" onde houver um valor na coluna "CÓD. PEÇA" (coluna B)
+            if row[0].value:
+                formula = f'=IFERROR(INDEX(OC!C:C; CORRESP("*" & B{i} & "*"; OC!B:B; 0)); D{i-1})'
+                ws[f"D{i}"] = formula  # Insere a fórmula na coluna D
+
+        # Salva a planilha
+        wb.save(sheet_name)
+
+        return sheet_name
+    
 # Cria pastas de acordo o material de cada projeto e os move de uma forma que todos os arquivos do mesmo tipo fiquem agrupados de acordo o seu material
     def organize_folders(self):
         
@@ -209,6 +230,32 @@ class ZipFolderManager:
                 print(f"Erro ao criar ou mover o arquivo {file_name}: {e}")
             except Exception as e:
                 print(f"Ocorreu um erro inesperado ao mover {file_name}: {e}")
+                
+        def create_and_copy_file(file_path, file_name, file_src):
+            try:
+                # Cria a pasta se não existir
+                if not os.path.exists(file_path):
+                    os.makedirs(file_path)
+                    
+                    # Dá permissão total (rwx) para todos os grupos (777)
+                    os.chmod(file_path, 0o777)
+                    
+                destino_path = os.path.join(file_path, file_name)
+                
+                # Remove o arquivo de destino se ele já existir
+                if os.path.exists(destino_path):
+                    os.remove(destino_path)
+                
+                # Move o arquivo para o destino
+                shutil.copy(file_src, destino_path)
+
+                # Dá permissão total (rwx) para todos os grupos (777) no arquivo movido
+                os.chmod(destino_path, 0o777)
+                
+            except OSError as e:
+                print(f"Erro ao criar ou mover o arquivo {file_name}: {e}")
+            except Exception as e:
+                print(f"Ocorreu um erro inesperado ao mover {file_name}: {e}")
 
         try:
            
@@ -225,7 +272,7 @@ class ZipFolderManager:
             # Organiza os PDFs
             for pdf in self.pdfs:
                 pdf_path = os.path.join(self.all_pdfs, pdf.material)
-                create_and_move_file(pdf_path, pdf.pdf_name, pdf.pdf_file)
+                create_and_copy_file(pdf_path, pdf.pdf_name, pdf.pdf_file)
                 
                 # Associa o material dos PDFs aos DXFs e DWGs correspondentes
                 for dxf in self.dxfs:
@@ -254,6 +301,7 @@ class ZipFolderManager:
 # Realiza a compactação das pastas criadas                   
     def zip_file_process(self):
         
+        folder_zip = "DESENHOS PDFs.zip"
         all_zip = "ProcessedFiles.zip"
         relatorio = "relatorio.txt"
         pdfs_zip = "PDFs.zip"
@@ -273,6 +321,7 @@ class ZipFolderManager:
         zip_pdfs = zip_folder(self.all_pdfs, pdfs_zip)
         zip_dxfs = zip_folder(self.all_dxfs, dxfs_zip)
         zip_dwgs = zip_folder(self.all_dwgs, dwgs_zip)
+        zip_extraction_folder =  zip_folder(self.extraction_folder, folder_zip)
         
         if os.path.exists(self.organization_folder_zip):
             shutil.rmtree(self.organization_folder_zip)
@@ -283,7 +332,8 @@ class ZipFolderManager:
         shutil.move(zip_dxfs, self.organization_folder_zip)
         shutil.move(zip_dwgs, self.organization_folder_zip)
         shutil.move(self.sheets, self.organization_folder_zip)
-       
+        shutil.move(zip_extraction_folder, self.organization_folder_zip)
+        
         if os.path.exists(relatorio):
             shutil.move(relatorio, self.organization_folder_zip)
             
