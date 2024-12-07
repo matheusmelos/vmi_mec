@@ -1,14 +1,3 @@
-/*function uploadFile() {
-    const fileInput = document.getElementById('fileInput');
-    fileInput.click();
-    
-    fileInput.onchange = function() {
-        if (fileInput.value) {
-            document.getElementById('submitBtn').click();
-        }
-    };
-}*/
-
 function uploadFile() {
     const fileInput = document.getElementById('fileInput');
     fileInput.click();

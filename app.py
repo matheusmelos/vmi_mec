@@ -1,7 +1,6 @@
 from models.zip_manager import ZipFolderManager
-import shutil
 import os
-from flask import Flask, render_template, request, send_file, jsonify, redirect, url_for
+from flask import Flask, render_template, request, send_file, jsonify
 
 app = Flask(__name__)
 
@@ -21,6 +20,11 @@ def process_zip(file_path):
 @app.route('/')
 def index():
     return render_template('index.html')
+
+# Home route with upload form
+@app.route('/admin')
+def admin_page():
+    return render_template('adminPage.html')
 
 # Route to handle the file upload and processing
 @app.route('/upload', methods=['POST'])

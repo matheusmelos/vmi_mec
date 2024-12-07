@@ -27,10 +27,10 @@
                 </label>
                 <ul class="menu-list">
                     <li class="menu-list__item">
-                        <a href="#" class="navigation-menu__link">Home</a>
+                        <a href="{{ url_for('index') }}" class="navigation-menu__link">Home</a>
                     </li>
                     <li class="menu-list__item">
-                        <a href="#" class="navigation-menu__link">Admin</a>
+                        <a href="{{ url_for('admin_page') }}" class="navigation-menu__link">Admin</a>
                     </li>
                     <li class="menu-list__item">
                         <a href="#" class="navigation-menu__link">Tutorial</a>
@@ -45,8 +45,8 @@
                     <a href="" class="navigation-menu__logo">
                         <img src="{{ url_for('static', filename='img/logo_mec.svg') }}" alt="Logo da OptimusTech">
                     </a>
-                    <a href="" class="navigation-menu__link">Home</a>
-                    <a href="" class="navigation-menu__link">Admin</a>
+                    <a href="{{ url_for('index') }}" class="navigation-menu__link">Home</a>
+                    <a href="{{ url_for('admin_page') }}" class="navigation-menu__link">Admin</a>
                     <a href="" class="navigation-menu__link">Tutorial</a>
                 </nav>
                 <div class="session-menu">

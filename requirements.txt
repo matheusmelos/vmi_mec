@@ -11,10 +11,15 @@ MarkupSafe==2.1.5
 numpy==2.1.1
 openpyxl==3.1.5
 packaging==24.1
+pandas==2.2.3
+patool==3.0.2
 PyMuPDF==1.24.11
 pyparsing==3.1.4
+python-dateutil==2.9.0.post0
+pytz==2024.2
 rarfile==4.2
+six==1.17.0
 typing_extensions==4.12.2
+tzdata==2024.2
 unrar==0.4
 Werkzeug==3.0.4
-patool==3.0.2
