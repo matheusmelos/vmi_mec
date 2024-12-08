@@ -20,16 +20,20 @@
                 >
                 <h1>.ZIP</h1>
                 <p class="section-admin__card-text">
-                    Clique aqui para enviar o arquivo .zip a ser processado.
+                    Clique aqui para enviar o arquivo.
                 </p>
-                
+                 
                 <form id="upload-form" enctype="multipart/form-data">
                   <input type="file" name="file" id="fileInput" required style="display: none;">
-                  <button type="button" class="section-admin__admin-button" onclick="uploadFile()">
+                  <button type="button" class="section-admin__admin-button" onclick="uploadFileProcessed()">
                       Enviar arquivo
                       <img src="{{ url_for('static', filename='img/uploadIcon.svg') }}" alt="upload icon">
                   </button>
                 </form>
+                <!-- Tela de carregamento --> 
+                <div id="loading" style="display: none;">
+                    <p>Processando, por favor aguarde...</p>
+                </div>
             </div>
         </section>
     </div>
