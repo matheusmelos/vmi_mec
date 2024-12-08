@@ -11,6 +11,7 @@ class DXF:
         self.area = 0
         self.cut_speed = 167
         self.lote_min = 0
+        self.lote_max = 0
         self.perimeter = DXF.calculate_perimeter_total(self)
         self.cut_time = DXF.calculate_cut_time(self)
         self.compare_coordinates()
@@ -127,10 +128,13 @@ class DXF:
         
     def calculate_quantity(self):
             
-            chapa_largura = 1200 - 50
-            chapa_comprimento_30 = 1000 -50
-            resultados = []
-                                    
+        chapa_largura = 1200 - 50
+        chapa_comprimento_30 = 1000 - 50
+        chapa_comprimento_100 = 3000 - 50
+        
+        resultados = []
+        if self.comprimento and self.largura !=0:
+            #Calculo 30% de chapa                     
             largura_X = chapa_largura/self.comprimento
                                 
             largura_Y = chapa_largura/self.largura
@@ -138,16 +142,23 @@ class DXF:
             comprimento_X = chapa_comprimento_30/self.comprimento
                                                 
             comprimento_Y = chapa_comprimento_30/self.largura
-        
             
             resultado_1 =  largura_X*comprimento_Y
-            resultado_2 = largura_Y*comprimento_X
+           
             
-            resultados.append(resultado_1)
-            resultados.append(resultado_2)
+            #Calculo 100% de chapa
+            largura_X_100 = chapa_largura/self.comprimento
+                                
+            largura_Y_100 = chapa_largura/self.largura
+                                                    
+            comprimento_X_100 = chapa_comprimento_100 /self.comprimento
+                                                
+            comprimento_Y_100 = chapa_comprimento_100 /self.largura
+            
+            resultado_2 = largura_Y_100*comprimento_X_100
             
             perda_5 = 0.95
             perda_retalhos = 0.9
-            max_pecas = min(resultados)
-            self.lote_min = ((max_pecas)*perda_5)*perda_retalhos
+            self.lote_min = ((resultado_1)*perda_5)*perda_retalhos
+            self.lote_max = ((resultado_2)*perda_5)*perda_retalhos
             

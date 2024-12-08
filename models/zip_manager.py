@@ -139,7 +139,6 @@ class ZipFolderManager:
 
     def create_sheet(self):
   
-        i = 2  # Começando pela linha 2 para a fórmula
         pdf_files_used = set()
 
         # Nome da planilha
@@ -155,10 +154,11 @@ class ZipFolderManager:
             ws = wb.active
             ws.title = "Dados"
             # Cabeçalho da planilha
-            ws.append(["CÓD. PROTHEUS", "CÓD. PEÇA", "DESCRIÇÃO", "QUANTIDADE", "CÓD. CHAPA", "ESPESSURA", "MATERIAL", 
-                    "COMPRIMENTO", "LARGURA", "ÁREA TOTAL", "LOTE MÍNIMO (30% DA CHAPA)"])
-            ws.append([])
-
+            
+            ws.append(["ORDEM DE COMPRA", "DATA", "CÓD. PROTHEUS", "CÓD. PEÇA", "DESCRIÇÃO", "QTD", "CÓD. CHAPA", "ESPESSURA", "MATERIAL", 
+                    "COMPRIMENTO", "LARGURA", "ÁREA TOTAL", "AREA SUPERFICIAL", "TEMPO DE CORTE", "DOBRAS","REBITES", 
+                    "QTD REBITES", "ROSCAS","LOTE MÍNIMO (30% DA CHAPA)", "QTD CHAPA TOTAL", "ARQUIVO PDF","NOME DO PDF", "INFORME O CAMINHO ATÉ A PASTA", "EXEMPLO"])
+            ws.append(["", "" ,"" ,"" ,"" , "" ,"", "","", "", "","","","","","","", "", "","","", "", "mathe\OneDrive\Área de Trabalho", "SeuUsuario\Área de trabalho\ "])
         # Preenche os dados
         for grupo in self.grupos:
             for dxf in grupo.dxfs:
@@ -166,19 +166,18 @@ class ZipFolderManager:
                     if pdf.pdf_file in pdf_files_used:
                         continue
                     if pdf.name in dxf.dxf_name:
-                        grupo.rows_to_add.append([" ", pdf.name, pdf.protheus, " ", pdf.code, pdf.espessura, pdf.material, 
-                                                dxf.comprimento, dxf.largura, dxf.area, dxf.lote_min])
+                        grupo.rows_to_add.append(["OC033312","20/01/2025", " ", pdf.name, pdf.protheus, " ", pdf.code, pdf.espessura, pdf.material, 
+                                                dxf.comprimento, dxf.largura, dxf.area, pdf.area, dxf.cut_time, pdf.dobras, pdf.rebites,
+                                                pdf.qtd_rebites, pdf.rosca, dxf.lote_min, dxf.lote_max, f'=HIPERLINK("C:\\Users\\" & T2 & "\\{pdf.pdf_local}", "Abrir PDF - {pdf.name}")', pdf.pdf_name])
                         pdf_files_used.add(pdf.pdf_file)
                         break
 
             # Adicionando as linhas do grupo
             for pdf in grupo.pdfs:
                 if pdf.pdf_file not in pdf_files_used:
-                    sb = ' - SEM BENEFICIAR'
-                    grupo.rows_to_add_first.append([" ", pdf.name, pdf.protheus, " ", pdf.code , pdf.espessura, " ", 
-                                                    " ", " ", " "])
-                    grupo.rows_to_add_first.append([" ", pdf.name, pdf.protheus + sb, " ", pdf.code , pdf.espessura, 
-                                                    " ", " ", " ", " "])
+                    grupo.rows_to_add.append(["OC033312","20/01/2025", " ", pdf.name, pdf.protheus, " ", pdf.code, pdf.espessura, " ", 
+                                                " ", " ", " ", pdf.area, " ", pdf.dobras, pdf.rebites,
+                                                pdf.qtd_rebites, pdf.rosca, " ", " ", f'=HIPERLINK("C:\\Users\\" & T2 & "\\{pdf.pdf_local}", "Abrir PDF - {pdf.name}")', pdf.pdf_name])
                     pdf_files_used.add(pdf.pdf_file)
 
             grupo.rows_to_add.append([])
@@ -189,14 +188,7 @@ class ZipFolderManager:
                 ws.append(row)
             for row in grupo.rows_to_add:
                 ws.append(row)
-
-        # Agora, vamos adicionar a fórmula na coluna "QUANTIDADE" (coluna D, 4ª coluna)
-        for i, row in enumerate(ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=2, max_col=2), start=2):
-            # Apenas insere a fórmula na coluna "QUANTIDADE" onde houver um valor na coluna "CÓD. PEÇA" (coluna B)
-            if row[0].value:
-                formula = f'=IFERROR(INDEX(OC!C:C; CORRESP("*" & B{i} & "*"; OC!B:B; 0)); D{i-1})'
-                ws[f"D{i}"] = formula  # Insere a fórmula na coluna D
-
+      
         # Salva a planilha
         wb.save(sheet_name)
 
@@ -297,6 +289,9 @@ class ZipFolderManager:
             print(f"Erro ao criar pastas ou mover arquivos: {e}")
         except Exception as e:
             print(f"Ocorreu um erro inesperado: {e}")
+        
+        for pdf in self.pdfs:
+            print(pdf.pdf_file)
 
 # Realiza a compactação das pastas criadas                   
     def zip_file_process(self):
@@ -408,4 +403,3 @@ def extract_subfiles(root_folder):
                                 f.write(f"{str(e)}\n")
 
         return root_folder  # Retorna a pasta raiz que contém tudo
-   

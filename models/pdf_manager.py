@@ -9,14 +9,24 @@ class PDF:
         
         self.name = PDF.filter_name(pdf_name)
         self.size = PDF.type_page(self)
+        self.pdf_local = str(self.pdf_file.replace("/", "\\"))
+
         self.revisao = PDF.search_revision_number(self)
         self.title = PDF.search_title(self)
         self.material, self.espessura = PDF.search_material_espessura(self)
         self.dobras = PDF.count_folds(self)
         self.protheus = PDF.protheus_code(self)
+        self.rebites =  '0'
+        
+        self.qtd_rebites = '0'
+        self.rosca = '0'
+        self.aviso = ' '
+        self.area = '0'
         self.code = ' '
         self.data  = PDF.data_material(self)
-    
+        self.found_area()
+        self.found_rebites()
+        self.found_roscas()
     
     def filter_name(pdf_name):
         return pdf_name[:-4]
@@ -321,7 +331,29 @@ class PDF:
         doc.close()
         
         return type, espessura 
-   
+         
+    def found_area(self):
+  
+        documento = fitz.open(self.pdf_file)
+        termo =  'Área'
+       
+        for numero_pagina in range(documento.page_count):
+            pagina = documento.load_page(numero_pagina)  
+            
+            # Procurar pelo termo na página
+            resultados_pagina = pagina.search_for(termo)  # Retorna as coordenadas de onde o termo é encontrado
+            
+            # Se o termo for encontrado, desenhar um retângulo e salvar a imagem
+            for area in resultados_pagina:
+                x0, y0, x1, y1 = area
+                
+                # Ajustar as coordenadas para pegar o texto logo abaixo, como exemplo
+                offset = 10  # Ajuste conforme necessário
+                nova_area = fitz.Rect(x0, y1, x1, y1 + offset)  # Área logo abaixo
+
+                # Extrair o texto da nova área
+                self.area = pagina.get_text("text", clip=nova_area)  # Pega o texto da área destacada
+         
     def count_folds(self):
         
         doc = fitz.open(self.pdf_file)
@@ -460,3 +492,62 @@ class PDF:
             self.code, self.material = busca.iloc[0]
         else:
             self.code = 'Não encontrado'
+
+    def found_rebites(self):
+        # Abrir o arquivo PDF
+        documento = fitz.open(self.pdf_file)
+        termo = "Rebite"
+        # Percorrer todas as páginas
+        for numero_pagina in range(documento.page_count):
+            pagina = documento.load_page(numero_pagina)  # Carrega a página
+            # Procurar pelo termo na página
+            resultados_pagina = pagina.search_for(termo)  # Retorna as coordenadas de onde o termo é encontrado
+            
+            # Se o termo for encontrado, desenhar um retângulo e salvar a imagem
+            for area in resultados_pagina:
+                x0, y0, x1, y1 = area
+                
+                # Desenhar um retângulo na área onde o termo foi encontrado
+                rect = fitz.Rect(x0, y0, x1, y1)  # Cria o retângulo com as coordenadas encontradas
+                pagina.draw_rect(rect, color=(1, 0, 0), width=2)  # Desenha o retângulo (vermelho)
+
+                # Ajustar as coordenadas para pegar o texto logo abaixo, como exemplo
+                offset = 15 # Ajuste conforme necessário
+                nova_area = fitz.Rect(x0, y0, x1 + 130, y1 + offset)  # Área logo abaixo
+                qtd_rebite = fitz.Rect(x0 - 30, y0, x0, y1 + offset)
+                
+                pagina.draw_rect(qtd_rebite, color=(0,1,0))
+                # Desenhar um retângulo na nova área
+                pagina.draw_rect(nova_area, color=(0, 0, 1), width=2)  # Desenha o retângulo abaixo (azul)
+                
+                # Extrair o texto da nova área
+                self.qtd_rebites = pagina.get_text("text", clip = qtd_rebite)
+                
+                self.rebites = pagina.get_text("text", clip=nova_area)  # Pega o texto da área destacada
+
+    def found_roscas(self):
+        # Abrir o arquivo PDF
+        documento = fitz.open(self.pdf_file)
+        termos = ["M4", "M5", "M6", "M7", "M8"]
+        
+        # Percorrer todas as páginas
+        for numero_pagina in range(documento.page_count):
+            pagina = documento.load_page(numero_pagina)  # Carrega a página
+            text = pagina.get_text("text")
+            if "Rebite" in text:
+                self.aviso = "EXISTEM REBITES E ROSCAS"
+            # Procurar pelo termo na página
+            for termo in termos:
+                resultados_pagina = pagina.search_for(termo)  # Retorna as coordenadas de onde o termo é encontrado
+            
+            # Se o termo for encontrado, desenhar um retângulo e salvar a imagem
+            for area in resultados_pagina:
+                x0, y0, x1, y1 = area
+                # Ajustar as coordenadas para pegar o texto logo abaixo, como exemplo
+                offset = 15 
+                nova_area = fitz.Rect(x0-20, y0-30, x1 + 130, y1 + offset)  # Área logo abaixo
+
+                # Extrair o texto da nova área
+                self.roscas = pagina.get_text("text", clip=nova_area)  # Pega o texto da área destacada
+                
+
