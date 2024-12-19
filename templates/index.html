@@ -6,24 +6,54 @@
 
 {% block content %}
     <div class="container">
-        <section class="section-text text">
-            <h1 class="section-text__title">Trasforme <span>.zip</span> em</h1>
-            <h1 class="section-text__title">dados em <span>segundos.</span></h1>
-            <p class="section-text__description">
-                Selecione o pasta .zip ou .rar com os arquivos a serem processados.
-            </p>
+        <section class="section-home">
+            <h1 class="section-home__title">Faça o upload do arquivo</h1>
+            <div class="section-home__cards">
 
-            <form id="upload-form" enctype="multipart/form-data">
-                <input type="file" name="file" id="fileInput" required style="display: none;">
-                <button type="button" class="section-text__upload-button" onclick="uploadFile()">
-                    Enviar arquivo
-                    <img src="{{ url_for('static', filename='img/uploadIcon.svg') }}" alt="upload icon">
-                </button>
-            </form>
-
-            <!-- Tela de carregamento --> 
-            <div id="loading" style="display: none;">
-                <p>Processando, por favor aguarde...</p>
+                <div class="section-home__card">
+                    <img 
+                        src="{{ url_for('static', filename='img/pdfIcon.svg') }}" 
+                        alt="ícone do arquivo zip"
+                    >
+                    <h1>Process PDFs</h1>
+                    <p class="section-home__card-text">
+                        Clique aqui para enviar o arquivo.
+                    </p>
+                    
+                    <form id="upload-form" enctype="multipart/form-data">
+                    <input type="file" name="file" id="fileInput" required style="display: none;">
+                    <button type="button" class="section-home__home-button" onclick="uploadFile()">
+                        Enviar arquivo
+                        <img src="{{ url_for('static', filename='img/uploadIcon.svg') }}" alt="upload icon">
+                    </button>
+                    </form>
+                    <!-- Tela de carregamento --> 
+                    <div id="loading" style="display: none;">
+                        <p>Processando, por favor aguarde...</p>
+                    </div>
+                </div>
+                <div class="section-home__card">
+                    <img 
+                        src="{{ url_for('static', filename='img/zipIcon.svg') }}" 
+                        alt="ícone do arquivo zip"
+                    >
+                    <h1>.ZIP Manager</h1>
+                    <p class="section-home__card-text">
+                        Clique aqui para enviar o arquivo.
+                    </p>
+                    
+                    <form id="upload-form" enctype="multipart/form-data">
+                    <input type="file" name="file" id="fileInput" required style="display: none;">
+                    <button type="button" class="section-home__home-button" onclick="uploadFileProcessed()">
+                        Enviar arquivo
+                        <img src="{{ url_for('static', filename='img/uploadIcon.svg') }}" alt="upload icon">
+                    </button>
+                    </form>
+                    <!-- Tela de carregamento --> 
+                    <div id="loading" style="display: none;">
+                        <p>Processando, por favor aguarde...</p>
+                    </div>
+                </div>
             </div>
         </section>
     </div>

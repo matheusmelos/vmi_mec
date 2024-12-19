@@ -12,28 +12,21 @@
                     <img src="{{ url_for('static', filename='img/leftArrow.svg') }}" alt="Voltar">
                 </a>
             </div>
-            <h1 class="section-admin__title">Faça o upload do arquivo</h1>
+            <h1 class="section-admin__title">Redirecionamento para o dashboard</h1>
             <div class="section-admin__card">
                 <img 
-                    src="{{ url_for('static', filename='img/zipIcon.svg') }}" 
+                    src="{{ url_for('static', filename='img/chartIcon.svg') }}" 
                     alt="ícone do arquivo zip"
                 >
-                <h1>.ZIP</h1>
+                <h1>Dashboard</h1>
                 <p class="section-admin__card-text">
-                    Clique aqui para enviar o arquivo.
+                    Clique aqui para ser redirecionado.
                 </p>
                  
-                <form id="upload-form" enctype="multipart/form-data">
-                  <input type="file" name="file" id="fileInput" required style="display: none;">
-                  <button type="button" class="section-admin__admin-button" onclick="uploadFileProcessed()">
-                      Enviar arquivo
-                      <img src="{{ url_for('static', filename='img/uploadIcon.svg') }}" alt="upload icon">
-                  </button>
-                </form>
-                <!-- Tela de carregamento --> 
-                <div id="loading" style="display: none;">
-                    <p>Processando, por favor aguarde...</p>
-                </div>
+                <a class="section-admin__admin-button">
+                    Dashboard
+                </a>
+
             </div>
         </section>
     </div>
