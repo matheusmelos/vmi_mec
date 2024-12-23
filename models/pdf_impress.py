@@ -128,8 +128,11 @@ class PDF_Printer:
                 pasta_pdf = os.path.dirname(pdf)  # Obtem o diretório do PDF original
                 nome_pdf_final = os.path.splitext(nome_do_pdf_atual)[0] + "_editado.pdf"  # Adiciona o sufixo "_editado"
                 pdf_final = os.path.join(pasta_pdf, nome_pdf_final)
-
-                # Salvar o PDF editado
+                
+                os.remove(pdf)
+              
+              
+              
                 doc.save(pdf_final)
                 print(f"PDF editado salvo como: {pdf_final}")
         
@@ -221,9 +224,19 @@ class PDF_Printer:
 
     def zip_file_process(self):
         
+        data_dashboard = "data dashboard"
+        
+        if os.path.exists(data_dashboard):
+            shutil.rmtree(data_dashboard)
+                
+        os.makedirs(data_dashboard)
+        
+        shutil.move(self.data, data_dashboard)
+        
+        
         folder_zip = "PDFs IMPRESSÃO.zip"
         relatorio = "relatorio.txt"
-
+        
     
         def zip_folder (base_file, zip_file):
       
@@ -244,10 +257,9 @@ class PDF_Printer:
         destino_path = os.path.join("uploads", zip_file_processed)
         
         if os.path.exists(destino_path):
-            os.remove(destino_path)
-        
+            shutil.rmtree(destino_path)
         shutil.move(zip_file_processed, "uploads")
-
+        
         return zip_file_processed
 
 # Apaga pastas criadas durante o processo    

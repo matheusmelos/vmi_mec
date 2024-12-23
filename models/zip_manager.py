@@ -1,6 +1,7 @@
 from models.pdf_manager import PDF
 from models.dxf_manager import DXF
 from models.dwg_manager import DWG
+import pandas as pd
 import openpyxl
 import rarfile
 import zipfile
@@ -46,8 +47,10 @@ class ZipFolderManager:
         self.grupos = []
         
         self.folder = zip_folder
-        
-        self.extraction_folder = "DESENHOS PDFs"
+        self.data = ' '
+        self.oc = ' '
+        self.data_entrega = ' '
+        self.extraction_folder = "DESENHOS PDFs - FEVEREIRO"
         self.organization_folder = 'OrganizedFiles'
         self.organization_folder_zip = 'OrganizedFilesZip'
         self.all_pdfs = 'OrganizedFiles/PDFs'
@@ -55,6 +58,7 @@ class ZipFolderManager:
         self.all_dxfs = 'OrganizedFiles/DXFs'
         self.descompact_folder = ZipFolderManager.extract_folder(self)
         self.agroup_designs()
+        self.get_data()
         self.sheets = ZipFolderManager.create_sheet(self)
         self.organize_folders()
         self.processed_zip = ZipFolderManager.zip_file_process(self)
@@ -127,6 +131,9 @@ class ZipFolderManager:
                     self.dwgs.append(dwg_obj)
                     grupo.adicionar_arquivo(dwg_obj)
                     arquivos_encontrados = True
+                
+                elif file.upper().endswith(".XLSX"):
+                    self.data = file_path
 
             # Adiciona o grupo se encontrar arquivos relevantes
             if arquivos_encontrados:
@@ -166,16 +173,16 @@ class ZipFolderManager:
                     if pdf.pdf_file in pdf_files_used:
                         continue
                     if pdf.name in dxf.dxf_name:
-                        grupo.rows_to_add.append(["OC033312","20/01/2025", " ", pdf.name, pdf.protheus, " ", pdf.code, pdf.espessura, pdf.material, 
+                        grupo.rows_to_add.append([self.oc,self.data_entrega, " ", pdf.name, pdf.protheus, pdf.qtd, pdf.code, pdf.espessura, pdf.material, 
                                                 dxf.comprimento, dxf.largura, dxf.area, pdf.area, dxf.cut_time, pdf.dobras, pdf.rebites,
-                                                pdf.qtd_rebites, pdf.rosca, dxf.lote_min, dxf.lote_max, f'=HIPERLINK("C:\\Users\\" & T2 & "\\{pdf.pdf_local}", "Abrir PDF - {pdf.name}")', pdf.pdf_name])
+                                                pdf.qtd_rebites, pdf.rosca, dxf.lote_min, dxf.lote_max, f'=HIPERLINK("C:\\Users\\" & W2 & "\\{pdf.pdf_local}", "Abrir PDF - {pdf.name}")', pdf.pdf_name])
                         pdf_files_used.add(pdf.pdf_file)
                         break
 
             # Adicionando as linhas do grupo
             for pdf in grupo.pdfs:
                 if pdf.pdf_file not in pdf_files_used:
-                    grupo.rows_to_add.append(["OC033312","20/01/2025", " ", pdf.name, pdf.protheus, " ", pdf.code, pdf.espessura, " ", 
+                    grupo.rows_to_add.append([self.oc,self.data_entrega, " ", pdf.name, pdf.protheus, pdf.qtd, pdf.code, pdf.espessura, " ", 
                                                 " ", " ", " ", pdf.area, " ", pdf.dobras, pdf.rebites,
                                                 pdf.qtd_rebites, pdf.rosca, " ", " ", f'=HIPERLINK("C:\\Users\\" & T2 & "\\{pdf.pdf_local}", "Abrir PDF - {pdf.name}")', pdf.pdf_name])
                     pdf_files_used.add(pdf.pdf_file)
@@ -296,7 +303,7 @@ class ZipFolderManager:
 # Realiza a compactação das pastas criadas                   
     def zip_file_process(self):
         
-        folder_zip = "DESENHOS PDFs.zip"
+        folder_zip = "DESENHOS PDFs - FEVEREIRO.zip"
         all_zip = "ProcessedFiles.zip"
         relatorio = "relatorio.txt"
         pdfs_zip = "PDFs.zip"
@@ -342,7 +349,85 @@ class ZipFolderManager:
         shutil.move(zip_file_processed, "uploads")
 
         return zip_file_processed
+    
+    def get_data(self):
+        
+        # Carregar a planilha Excel
+        df = pd.read_excel(self.data)
 
+        # Verificar se a coluna "ORDEM DE COMPRA" existe
+        if "ORDEM DE COMPRA" not in df.columns:
+            print("A coluna 'ORDEM DE COMPRA' não foi encontrada na planilha.")
+        else:
+            # Preencher valores nulos com uma mensagem padrão
+            df["ORDEM DE COMPRA"] = df["ORDEM DE COMPRA"].fillna("Informação não disponível")
+
+            # Converter para string (remover ".0" de valores numéricos)
+            df["ORDEM DE COMPRA"] = df["ORDEM DE COMPRA"].apply(
+                lambda x: str(int(x)) if isinstance(x, float) else str(x)
+            )
+
+            # Pegar o primeiro valor não nulo na coluna "ORDEM DE COMPRA"
+            oc = df.loc[df["ORDEM DE COMPRA"] != "Informação não disponível", "ORDEM DE COMPRA"].iloc[0]
+            self.oc = oc
+
+        # Verificar se a coluna "ORDEM DE COMPRA" existe
+        
+        if "DATA" not in df.columns:
+            print("A coluna 'DATA' não foi encontrada na planilha.")
+        else:
+            # Preencher valores nulos com uma mensagem padrão
+            df["DATA"] = df["DATA"].fillna("Informação não disponível")
+
+            # Converter para string (remover ".0" de valores numéricos)
+            df["DATA"] = df["DATA"].apply(
+                lambda x: str(int(x)) if isinstance(x, float) else str(x)
+            )
+
+            # Pegar o primeiro valor não nulo na coluna "ORDEM DE COMPRA"
+            data_entrega = df.loc[df["DATA"] != "Informação não disponível", "DATA"].iloc[0]
+            self.data_entrega = data_entrega
+
+        
+       # Verificar se as colunas necessárias existem
+        if "QTD" not in df.columns or "DESCRIÇÃO" not in df.columns:
+            print("As colunas 'QTD' ou 'DESCRIÇÃO' não foram encontradas na planilha.")
+            return
+
+        # Preencher valores nulos com uma mensagem padrão
+        df["QTD"] = df["QTD"].fillna("Informação não disponível")
+        df["DESCRIÇÃO"] = df["DESCRIÇÃO"].fillna("Informação não disponível")
+
+        # Converter para string (remover ".0" de valores numéricos na coluna "QTD")
+        df["QTD"] = df["QTD"].apply(
+            lambda x: str(int(x)) if isinstance(x, float) else str(x)
+        )
+
+        # Nome do PDF a ser buscado
+        for pdf in self.pdfs:
+            name = pdf.name.upper()
+            title = pdf.title.upper() if hasattr(pdf, 'title') else None
+
+            # Filtrar as linhas onde o nome do PDF está contido na coluna "DESCRIÇÃO"
+            linhas_filtradas = df[df["DESCRIÇÃO"].str.contains(name, case=False, na=False)]
+
+            if not linhas_filtradas.empty:
+                qtd = linhas_filtradas["QTD"].iloc[0]
+                pdf.qtd = qtd
+                print(f"A quantidade correspondente ao PDF '{pdf.name}' é: {qtd}")
+            elif title:
+                # Tentar novamente com pdf.title caso não encontre com pdf.name
+                linhas_filtradas = df[df["DESCRIÇÃO"].str.contains(title, case=False, na=False)]
+                if not linhas_filtradas.empty:
+                    qtd = linhas_filtradas["QTD"].iloc[0]
+                    pdf.qtd = qtd
+                    print(f"A quantidade correspondente ao PDF '{pdf.title}' é: {qtd}")
+                else:
+                    print(f"Nenhuma linha correspondente encontrada para o PDF '{pdf.name}' ou '{pdf.title}' na coluna 'DESCRIÇÃO'.")
+            else:
+                print(f"Nenhuma linha correspondente encontrada para o PDF '{pdf.name}' na coluna 'DESCRIÇÃO'.")
+
+ 
 # Apaga pastas criadas durante o processo    
     def clean_all(self):
         

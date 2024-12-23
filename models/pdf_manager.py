@@ -17,7 +17,7 @@ class PDF:
         self.dobras = PDF.count_folds(self)
         self.protheus = PDF.protheus_code(self)
         self.rebites =  '0'
-        
+        self.qtd = ' '
         self.qtd_rebites = '0'
         self.rosca = '0'
         self.aviso = ' '
@@ -216,7 +216,7 @@ class PDF:
             elif 0.5 < espessura < 1:
                 espessura = 0.9
             elif 1 < espessura < 1.5:
-                espessura == 1.2
+                espessura = 1.2
             elif 1.2 < espessura < 1.8:
                 espessura = 1.5
             elif 1.5 < espessura <= 2:
@@ -316,18 +316,22 @@ class PDF:
             
         else:
             type = self.type_material(material)
-        
-        if rect_espessura:
-            text = page.get_text("text", clip=rect_espessura)
-            text_espessura = ((((text.upper()).replace("MM", ""))).replace(",", ".")).strip()
-            espessura = self.found_espessura(text_espessura)
-        else:
-            if "mm" in material:
-                espessura = float((((material[-6:].replace("mm","")).replace(",", "."))).replace("#", ""))
-            elif "MM" in material:
-                espessura = float((((material[-6:].replace("MM","")).replace(",", "."))).replace("#", ""))
+        try:
+            if rect_espessura:
+                text = page.get_text("text", clip=rect_espessura)
+                text_espessura = ((((text.upper()).replace("MM", ""))).replace(",", ".")).strip()
+                espessura = self.found_espessura(text_espessura)
             else:
-                espessura = 0
+                if "mm" in material:
+                    espessura = float((((material[-6:].replace("mm","")).replace(",", "."))).replace("#", ""))
+                elif "MM" in material:
+                    espessura = float((((material[-6:].replace("MM","")).replace(",", "."))).replace("#", ""))
+                else:
+                    espessura = 0
+        except Exception:
+            espessura = 0
+        
+        
         doc.close()
         
         return type, espessura 
@@ -549,5 +553,5 @@ class PDF:
 
                 # Extrair o texto da nova área
                 self.roscas = pagina.get_text("text", clip=nova_area)  # Pega o texto da área destacada
-                
+
 
