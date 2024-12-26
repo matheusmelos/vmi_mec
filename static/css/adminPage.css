@@ -1,9 +1,7 @@
 .section-admin {
-  height: calc(100vh - 180px);
   display: flex;
   flex-direction: column;
   align-items: center;
-
   padding: 3rem 0;
 }
 
@@ -52,4 +50,16 @@
 
 .section-admin__admin-button:hover {
   opacity: 0.8;
+}
+
+@media screen and (max-width: 768px) {
+  .section-home__card {
+    width: 340px;
+  }
+}
+
+@media screen and (max-width: 320px) {
+  .section-home__card {
+    width: 300px;
+  }
 }
