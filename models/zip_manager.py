@@ -350,8 +350,6 @@ class ZipFolderManager:
 
         return zip_file_processed
     
-
-
     def get_data(self):
         try:
             # Carregar a planilha Excel
@@ -407,8 +405,6 @@ class ZipFolderManager:
         except Exception as e:
             print(f"Ocorreu um erro ao processar a planilha: {e}")
 
-
- 
 # Apaga pastas criadas durante o processo    
     def clean_all(self):
         
